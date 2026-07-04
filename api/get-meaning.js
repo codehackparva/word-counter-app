@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     const { word, langHint } = req.body;
 
     try {
-        const response = await fetch(
+        const geminiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
                 method: "POST",
@@ -22,16 +22,35 @@ export default async function handler(req, res) {
             }
         );
 
-        const data = await response.json();
+        const data = await geminiResponse.json();
 
-        // Extract Gemini's text response and reshape it to match what the frontend expects
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        // If Gemini itself returned an error (bad key, quota, blocked content, etc.)
+        if (!geminiResponse.ok || data.error) {
+            return res.status(200).json({
+                content: [{ type: 'text', text: '{}' }],
+                _debug: { geminiStatus: geminiResponse.status, geminiError: data.error || data }
+            });
+        }
+
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+            // Response came back but not in the expected shape — surface it for debugging
+            return res.status(200).json({
+                content: [{ type: 'text', text: '{}' }],
+                _debug: { note: 'No text found in Gemini response', rawResponse: data }
+            });
+        }
+
         const clean = rawText.replace(/```json|```/g, '').trim();
 
         res.status(200).json({
             content: [{ type: 'text', text: clean }]
         });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch meaning' });
+        res.status(200).json({
+            content: [{ type: 'text', text: '{}' }],
+            _debug: { note: 'Exception thrown', message: err.message }
+        });
     }
 }
