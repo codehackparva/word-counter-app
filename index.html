@@ -1120,34 +1120,7 @@
                     Auto-detect active
                 </span>
             </div>
-            <div class="p-md border-b border-surface-variant bg-surface-container-low/30">
-                <div class="relative group cursor-pointer border-2 border-dashed border-outline-variant rounded-lg p-md flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary-container/5 transition-all duration-200"
-                    id="upload-zone">
-                    <input type="file" class="hidden" id="file-input" accept=".txt,.docx,.pdf">
-                    <div class="flex flex-col items-center gap-1" id="upload-prompt">
-                        <span
-                            class="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">cloud_upload</span>
-                        <p class="text-label-md text-secondary font-label-md">Drag &amp; drop a .txt, .docx, or .pdf
-                            file, or <span class="text-primary font-medium">click to browse</span></p>
-                        <div class="hidden mt-2 flex items-center gap-2 bg-error-container/30 px-3 py-2 rounded-lg border border-error/20"
-                            id="pdf-error-state"><span
-                                class="material-symbols-outlined text-[18px] text-error">warning</span>
-                            <p class="text-label-sm text-on-error-container">This looks like a scanned PDF — text
-                                couldn't be extracted.</p>
-                        </div>
-                    </div>
-                    <div class="hidden flex items-center gap-2 bg-primary-container/20 px-3 py-1 rounded-full border border-primary/20"
-                        id="file-status">
-                        <span class="material-symbols-outlined text-[18px] text-primary">description</span>
-                        <span class="text-label-sm font-medium text-on-primary-container"
-                            id="filename-display">document.txt</span>
-                        <button class="hover:text-error transition-colors flex items-center" id="remove-file"
-                            aria-label="Remove uploaded file">
-                            <span class="material-symbols-outlined text-[16px]">close</span>
-                        </button>
-                    </div>
-                </div>
-            </div><textarea
+            <textarea
                 class="w-full min-h-[300px] p-lg border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline-variant bg-transparent textarea-focus-glow transition-all duration-200"
                 id="main-editor" placeholder="Type or paste your text here..." spellcheck="false"
                 aria-label="Text input for word and letter counting"></textarea>
@@ -1222,13 +1195,7 @@
         const badge = document.getElementById('detect-badge');
         const langToggle = document.getElementById('lang-toggle');
         const langDropdown = document.getElementById('lang-dropdown');
-        const uploadZone = document.getElementById('upload-zone');
-        const fileInput = document.getElementById('file-input');
-        const uploadPrompt = document.getElementById('upload-prompt');
-        const fileStatus = document.getElementById('file-status');
-        const filenameDisplay = document.getElementById('filename-display');
-        const removeFileBtn = document.getElementById('remove-file');
-        const pdfErrorState = document.getElementById('pdf-error-state');
+
 
         let currentLang = 'Gujarati';
 
@@ -1377,79 +1344,7 @@
             URL.revokeObjectURL(url);
         });
 
-        // ---- File upload: .txt / .docx / .pdf ----
-        function resetFile() {
-            fileInput.value = '';
-            fileStatus.classList.add('hidden');
-            uploadPrompt.classList.remove('hidden');
-            pdfErrorState.classList.add('hidden');
-        }
 
-        uploadZone.addEventListener('click', (e) => {
-            if (e.target.closest('#remove-file')) return;
-            fileInput.click();
-        });
-        removeFileBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetFile();
-        });
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-primary'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-primary'));
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('border-primary');
-            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleFile(e.target.files[0]);
-        });
-
-        const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB — generous for text documents, prevents browser hang on huge files
-
-        async function handleFile(file) {
-            if (file.size > MAX_FILE_SIZE) {
-                alert('This file is too large (max 15MB). Please upload a smaller document.');
-                resetFile();
-                return;
-            }
-            pdfErrorState.classList.add('hidden');
-            filenameDisplay.textContent = file.name;
-            fileStatus.classList.remove('hidden');
-            uploadPrompt.querySelector('p').classList.add('hidden');
-            const ext = file.name.split('.').pop().toLowerCase();
-
-            try {
-                if (ext === 'txt') {
-                    editor.value = await file.text();
-                    onEditorInput();
-                } else if (ext === 'docx') {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const result = await mammoth.extractRawText({ arrayBuffer });
-                    editor.value = result.value;
-                    onEditorInput();
-                } else if (ext === 'pdf') {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    let fullText = '';
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const content = await page.getTextContent();
-                        fullText += content.items.map(it => it.str).join(' ') + '\n';
-                    }
-                    if (!fullText.trim()) {
-                        editor.value = '';
-                        pdfErrorState.classList.remove('hidden');
-                    } else {
-                        editor.value = fullText.trim();
-                    }
-                    onEditorInput();
-                }
-            } catch (err) {
-                alert('Could not read this file: ' + err.message);
-                resetFile();
-            }
-        }
 
         // Initial state
         onEditorInput();
