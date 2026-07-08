@@ -1161,22 +1161,7 @@
                     </div>
                     <span class="font-label-sm text-label-sm text-secondary">Clear</span>
                 </button>
-                <button class="group flex flex-col items-center gap-1 transition-all active:scale-95" id="copy-btn"
-                    title="Copy text">
-                    <div
-                        class="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
-                        <span class="material-symbols-outlined">content_copy</span>
-                    </div>
-                    <span class="font-label-sm text-label-sm text-secondary">Copy</span>
-                </button>
-                <button class="group flex flex-col items-center gap-1 transition-all active:scale-95" id="download-btn"
-                    title="Download as .txt">
-                    <div
-                        class="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
-                        <span class="material-symbols-outlined">download</span>
-                    </div>
-                    <span class="font-label-sm text-label-sm text-secondary">Save</span>
-                </button>
+
             </div>
             <div class="flex items-center gap-md">
                 <span class="text-secondary font-label-sm text-label-sm">© 2024 Word Counter AI</span>
@@ -1317,32 +1302,9 @@
             editor.value = '';
             onEditorInput();
             editor.focus();
-            resetFile();
         });
 
-        document.getElementById('copy-btn').addEventListener('click', () => {
-            if (editor.value) {
-                const label = document.getElementById('copy-btn').querySelector('span:last-child');
-                const originalText = label.textContent;
-                navigator.clipboard.writeText(editor.value).then(() => {
-                    label.textContent = 'Copied!';
-                    setTimeout(() => { label.textContent = originalText; }, 2000);
-                }).catch(() => {
-                    label.textContent = 'Failed';
-                    setTimeout(() => { label.textContent = originalText; }, 2000);
-                });
-            }
-        });
 
-        document.getElementById('download-btn').addEventListener('click', () => {
-            const blob = new Blob([editor.value], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'word-counter-text.txt';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
 
 
 
