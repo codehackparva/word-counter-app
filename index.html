@@ -1096,27 +1096,13 @@
                     class="flex items-center gap-2 px-md py-sm bg-surface-container rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors"
                     id="lang-toggle">
                     <span class="material-symbols-outlined">language</span>
-                    <span class="">English</span>
+                    <span class="">Gujarati</span>
                     <span class="material-symbols-outlined">expand_more</span>
                 </button>
                 <div class="hidden absolute right-0 mt-2 w-48 bg-surface-container-lowest border border-surface-variant rounded-lg shadow-lg overflow-hidden z-50"
                     id="lang-dropdown">
                     <div class="max-h-60 overflow-y-auto">
-                        <div class="px-md py-sm hover:bg-primary-container/10 cursor-pointer text-primary font-bold">
-                            Auto-detect</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">English</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Hindi</div>
                         <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Gujarati</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Marathi</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Bengali</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Tamil</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Telugu</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Kannada</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Malayalam</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Punjabi</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Odia</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Urdu</div>
-                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Assamese</div>
                     </div>
                 </div>
             </div>
@@ -1244,7 +1230,7 @@
         const removeFileBtn = document.getElementById('remove-file');
         const pdfErrorState = document.getElementById('pdf-error-state');
 
-        let currentLang = 'auto';
+        let currentLang = 'Gujarati';
 
         // ---- Accurate grapheme-aware counting (handles Indic conjuncts/matras) ----
         function countStats(text) {
@@ -1327,16 +1313,9 @@
             editor.style.height = 'auto';
             editor.style.height = editor.scrollHeight + 'px';
 
-            const detected = currentLang === 'auto' ? detectLanguage(text) : null;
-
-            // Urdu reads right-to-left — flip the textarea direction when detected
-            if (currentLang === 'Urdu' || (currentLang === 'auto' && isArabicScript(text))) {
-                editor.setAttribute('dir', 'rtl');
-                editor.style.textAlign = 'right';
-            } else {
-                editor.setAttribute('dir', 'ltr');
-                editor.style.textAlign = 'left';
-            }
+            // Gujarati is always LTR
+            editor.setAttribute('dir', 'ltr');
+            editor.style.textAlign = 'left';
 
             const stats = countStats(text);
             wordCount.textContent = stats.words;
@@ -1344,16 +1323,7 @@
             charCount.textContent = stats.chars;
             sentenceCount.textContent = stats.sentences;
 
-            if (currentLang === 'auto' && text.trim().length > 5 && detected) {
-                badge.classList.remove('hidden');
-                badge.lastChild.textContent = 'Auto-detected: ' + detected;
-                langToggle.querySelector('span:nth-child(2)').textContent = detected;
-            } else {
-                badge.classList.add('hidden');
-                if (currentLang === 'auto') {
-                    langToggle.querySelector('span:nth-child(2)').textContent = 'Auto-detect';
-                }
-            }
+            badge.classList.add('hidden');
         }
         editor.addEventListener('input', onEditorInput);
 
@@ -1369,9 +1339,9 @@
         dropdownItems.forEach(item => {
             item.addEventListener('click', () => {
                 langToggle.querySelector('span:nth-child(2)').textContent = item.textContent;
-                currentLang = item.textContent === 'Auto-detect' ? 'auto' : item.textContent;
+                currentLang = item.textContent;
                 langDropdown.classList.add('hidden');
-                if (currentLang !== 'auto') badge.classList.add('hidden');
+                badge.classList.add('hidden');
             });
         });
 
