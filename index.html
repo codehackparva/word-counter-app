@@ -1281,6 +1281,38 @@
             return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
         }
 
+        // ---- Real Unicode-range based script/language detection ----
+        // Each Indic language has its own Unicode block, so we count how many
+        // characters fall into each block and pick whichever block dominates.
+        // Note: Bengali and Assamese share the same Unicode block, so that
+        // range is reported as "Bengali" (can't be distinguished by script alone).
+        const SCRIPT_RANGES = [
+            { lang: 'Gujarati', regex: /[\u0A80-\u0AFF]/g },
+            { lang: 'Hindi', regex: /[\u0900-\u097F]/g },       // Devanagari (Hindi/Marathi share this — defaults to Hindi)
+            { lang: 'Bengali', regex: /[\u0980-\u09FF]/g },     // Also covers Assamese
+            { lang: 'Punjabi', regex: /[\u0A00-\u0A7F]/g },     // Gurmukhi
+            { lang: 'Odia', regex: /[\u0B00-\u0B7F]/g },
+            { lang: 'Tamil', regex: /[\u0B80-\u0BFF]/g },
+            { lang: 'Telugu', regex: /[\u0C00-\u0C7F]/g },
+            { lang: 'Kannada', regex: /[\u0C80-\u0CFF]/g },
+            { lang: 'Malayalam', regex: /[\u0D00-\u0D7F]/g },
+            { lang: 'Urdu', regex: /[\u0600-\u06FF\u0750-\u077F]/g },
+            { lang: 'English', regex: /[a-zA-Z]/g },
+        ];
+
+        function detectLanguage(text) {
+            let best = null;
+            let bestCount = 0;
+            for (const { lang, regex } of SCRIPT_RANGES) {
+                const count = (text.match(regex) || []).length;
+                if (count > bestCount) {
+                    bestCount = count;
+                    best = lang;
+                }
+            }
+            return best; // null if no recognizable script characters found
+        }
+
         // Escape untrusted content (pasted text, AI responses) before inserting into innerHTML
         function escapeHtml(str) {
             const div = document.createElement('div');
@@ -1294,6 +1326,8 @@
 
             editor.style.height = 'auto';
             editor.style.height = editor.scrollHeight + 'px';
+
+            const detected = currentLang === 'auto' ? detectLanguage(text) : null;
 
             // Urdu reads right-to-left — flip the textarea direction when detected
             if (currentLang === 'Urdu' || (currentLang === 'auto' && isArabicScript(text))) {
@@ -1310,13 +1344,19 @@
             charCount.textContent = stats.chars;
             sentenceCount.textContent = stats.sentences;
 
-            if (currentLang === 'auto' && text.trim().length > 5) {
+            if (currentLang === 'auto' && text.trim().length > 5 && detected) {
                 badge.classList.remove('hidden');
+                badge.lastChild.textContent = 'Auto-detected: ' + detected;
+                langToggle.querySelector('span:nth-child(2)').textContent = detected;
             } else {
                 badge.classList.add('hidden');
+                if (currentLang === 'auto') {
+                    langToggle.querySelector('span:nth-child(2)').textContent = 'Auto-detect';
+                }
             }
         }
         editor.addEventListener('input', onEditorInput);
+
 
         // Language Dropdown
         langToggle.addEventListener('click', (e) => {
