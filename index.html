@@ -1122,8 +1122,12 @@
             </div>
             <textarea
                 class="w-full min-h-[300px] p-lg border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline-variant bg-transparent textarea-focus-glow transition-all duration-200"
-                id="main-editor" placeholder="Type or paste your text here..." spellcheck="false"
+                id="main-editor" placeholder="અહીં ગુજરાતી લખો અથવા પેસ્ટ કરો..." spellcheck="false"
                 aria-label="Text input for word and letter counting"></textarea>
+            <div id="lang-warning" class="hidden mx-lg mb-md mt-1 flex items-center gap-2 bg-error-container/30 px-3 py-2 rounded-lg border border-error/20">
+                <span class="material-symbols-outlined text-[18px] text-error">warning</span>
+                <p class="text-label-sm text-error font-medium">માત્ર ગુજરાતી ભાષા સ્વીકાર્ય છે. કૃપા કરી ફક્ત ગુજરાતી લખો.</p>
+            </div>
         </section>
         <!-- Stat Pills Grid -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-md">
@@ -1179,91 +1183,73 @@
 
         let currentLang = 'Gujarati';
 
-        // ---- Accurate grapheme-aware counting (handles Indic conjuncts/matras) ----
+        // ---- Gujarati-only counting ----
+        // Gujarati Unicode block: U+0A80–U+0AFF
+        const GUJARATI_CHAR = /[\u0A80-\u0AFF]/;
+        const GUJARATI_ONLY = /^[\u0A80-\u0AFF\s।॰0-9]+$/;
+
+        function isGujaratiOnly(text) {
+            if (!text.trim()) return true;
+            // Allow Gujarati chars, whitespace, Gujarati punctuation, and digits
+            return /^[\u0A80-\u0AFF\s।॰\d\u0964\u0965.,!?"'()-]+$/.test(text);
+        }
+
         function countStats(text) {
             if (!text || !text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
 
+            // Count only Gujarati grapheme clusters as letters
             let letters = 0;
             if (window.Intl && Intl.Segmenter) {
-                const graphemeSeg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+                const graphemeSeg = new Intl.Segmenter('gu', { granularity: 'grapheme' });
                 for (const g of graphemeSeg.segment(text)) {
-                    if (/[\p{L}\p{M}]/u.test(g.segment)) letters++;
+                    if (/[\u0A80-\u0AFF]/u.test(g.segment)) letters++;
                 }
             } else {
-                letters = (text.match(/[\p{L}]/gu) || []).length;
+                letters = (text.match(/[\u0A80-\u0AFF]/gu) || []).length;
             }
 
+            // Count words using Gujarati-aware segmenter
             let words = 0;
             if (window.Intl && Intl.Segmenter) {
-                const wordSeg = new Intl.Segmenter(undefined, { granularity: 'word' });
+                const wordSeg = new Intl.Segmenter('gu', { granularity: 'word' });
                 for (const w of wordSeg.segment(text)) {
-                    if (w.isWordLike) words++;
+                    if (w.isWordLike && /[\u0A80-\u0AFF]/.test(w.segment)) words++;
                 }
             } else {
-                words = text.trim().split(/\s+/).filter(Boolean).length;
+                words = text.trim().split(/\s+/).filter(s => /[\u0A80-\u0AFF]/.test(s)).length;
             }
 
             const chars = [...text].length;
+            // Gujarati sentence endings: । (U+0964) ॥ (U+0965) or standard punctuation
             const sentences = (text.match(/[^.!?।॥]+[.!?।॥]+/g) || (text.trim() ? [text] : [])).length;
 
             return { words, letters, chars, sentences };
         }
 
-        // Urdu / Arabic-script text reads right-to-left
-        function isArabicScript(text) {
-            return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
-        }
+        // ---- Live counting + Gujarati-only validation ----
+        const langWarning = document.getElementById('lang-warning');
 
-        // ---- Real Unicode-range based script/language detection ----
-        // Each Indic language has its own Unicode block, so we count how many
-        // characters fall into each block and pick whichever block dominates.
-        // Note: Bengali and Assamese share the same Unicode block, so that
-        // range is reported as "Bengali" (can't be distinguished by script alone).
-        const SCRIPT_RANGES = [
-            { lang: 'Gujarati', regex: /[\u0A80-\u0AFF]/g },
-            { lang: 'Hindi', regex: /[\u0900-\u097F]/g },       // Devanagari (Hindi/Marathi share this — defaults to Hindi)
-            { lang: 'Bengali', regex: /[\u0980-\u09FF]/g },     // Also covers Assamese
-            { lang: 'Punjabi', regex: /[\u0A00-\u0A7F]/g },     // Gurmukhi
-            { lang: 'Odia', regex: /[\u0B00-\u0B7F]/g },
-            { lang: 'Tamil', regex: /[\u0B80-\u0BFF]/g },
-            { lang: 'Telugu', regex: /[\u0C00-\u0C7F]/g },
-            { lang: 'Kannada', regex: /[\u0C80-\u0CFF]/g },
-            { lang: 'Malayalam', regex: /[\u0D00-\u0D7F]/g },
-            { lang: 'Urdu', regex: /[\u0600-\u06FF\u0750-\u077F]/g },
-            { lang: 'English', regex: /[a-zA-Z]/g },
-        ];
-
-        function detectLanguage(text) {
-            let best = null;
-            let bestCount = 0;
-            for (const { lang, regex } of SCRIPT_RANGES) {
-                const count = (text.match(regex) || []).length;
-                if (count > bestCount) {
-                    bestCount = count;
-                    best = lang;
-                }
-            }
-            return best; // null if no recognizable script characters found
-        }
-
-        // Escape untrusted content (pasted text, AI responses) before inserting into innerHTML
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str ?? '';
-            return div.innerHTML;
-        }
-
-        // ---- Live counting + hard word detection ----
         function onEditorInput() {
             const text = editor.value;
 
             editor.style.height = 'auto';
             editor.style.height = editor.scrollHeight + 'px';
 
-            // Gujarati is always LTR
             editor.setAttribute('dir', 'ltr');
             editor.style.textAlign = 'left';
 
+            // If text contains any non-Gujarati script characters, show warning and zero stats
+            if (text.trim() && !isGujaratiOnly(text)) {
+                langWarning.classList.remove('hidden');
+                wordCount.textContent = '0';
+                letterCount.textContent = '0';
+                charCount.textContent = '0';
+                sentenceCount.textContent = '0';
+                badge.classList.add('hidden');
+                return;
+            }
+
+            langWarning.classList.add('hidden');
             const stats = countStats(text);
             wordCount.textContent = stats.words;
             letterCount.textContent = stats.letters;
