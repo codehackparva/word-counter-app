@@ -1191,7 +1191,7 @@
         function isGujaratiOnly(text) {
             if (!text.trim()) return true;
             // Allow Gujarati chars, whitespace, Gujarati punctuation, and digits
-            return /^[\u0A80-\u0AFF\s।॰\d\u0964\u0965.,!?"'()-]+$/.test(text);
+            return /^[\u0A80-\u0AFF\s।॰\d\u0964\u0965.,!?\"'()\-\*\#\_\:\;\%\@\&\+\=\/\\]+$/.test(text);
         }
 
         function countStats(text) {
