@@ -1189,43 +1189,6 @@
                 <span class="font-stat-value text-stat-value text-on-surface" id="sentence-count">0</span>
             </div>
         </section>
-        <!-- Collapsible Meanings Card -->
-        <section
-            class="border border-surface-variant rounded-lg overflow-hidden bg-surface-container-lowest transition-all duration-300">
-            <button
-                class="w-full flex items-center justify-between p-lg hover:bg-surface-container-low transition-colors text-left group"
-                id="collapse-toggle">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-primary">auto_stories</span>
-                    <span class="font-headline-md text-headline-md">Word Meanings</span>
-                </div>
-                <span class="material-symbols-outlined transition-transform duration-300"
-                    id="collapse-icon">expand_less</span>
-            </button>
-            <div class="px-lg pb-lg" id="collapse-content">
-                <div class="hidden space-y-md" id="skeleton-state">
-                    <div class="flex flex-wrap gap-sm">
-                        <div class="skeleton h-8 w-24 rounded-full"></div>
-                        <div class="skeleton h-8 w-32 rounded-full"></div>
-                        <div class="skeleton h-8 w-20 rounded-full"></div>
-                        <div class="skeleton h-8 w-28 rounded-full"></div>
-                    </div>
-                    <p class="text-secondary font-label-sm italic">Analyzing complexity...</p>
-                </div>
-                <div class="space-y-md" id="empty-state">
-                    <p class="text-secondary font-label-md">Longer or uncommon words will appear here as you type — tap
-                        one for its meaning.</p>
-                </div>
-                <div class="hidden space-y-md" id="actual-content">
-                    <div class="flex flex-wrap gap-sm" id="chip-row"></div>
-                    <div class="hidden bg-surface-container-low border border-surface-variant rounded-lg p-md space-y-2"
-                        id="meaning-detail">
-                        <p class="font-headline-md text-headline-md text-primary" id="meaning-word"></p>
-                        <div id="meaning-body" class="space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
     <!-- Bottom Footer Toolbar -->
     <footer class="bg-surface-container-lowest border-t border-surface-variant mt-auto py-md">
@@ -1271,16 +1234,6 @@
         const charCount = document.getElementById('char-count');
         const sentenceCount = document.getElementById('sentence-count');
         const badge = document.getElementById('detect-badge');
-        const collapseBtn = document.getElementById('collapse-toggle');
-        const collapseContent = document.getElementById('collapse-content');
-        const collapseIcon = document.getElementById('collapse-icon');
-        const skeleton = document.getElementById('skeleton-state');
-        const emptyState = document.getElementById('empty-state');
-        const actualContent = document.getElementById('actual-content');
-        const chipRow = document.getElementById('chip-row');
-        const meaningDetail = document.getElementById('meaning-detail');
-        const meaningWord = document.getElementById('meaning-word');
-        const meaningBody = document.getElementById('meaning-body');
         const langToggle = document.getElementById('lang-toggle');
         const langDropdown = document.getElementById('lang-dropdown');
         const uploadZone = document.getElementById('upload-zone');
@@ -1323,38 +1276,6 @@
             return { words, letters, chars, sentences };
         }
 
-        function detectHardWords(text) {
-            if (!window.Intl || !Intl.Segmenter) return [];
-            const wordSeg = new Intl.Segmenter(undefined, { granularity: 'word' });
-            const graphemeSeg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-            const seen = new Set();
-            const out = [];
-            for (const w of wordSeg.segment(text)) {
-                if (!w.isWordLike) continue;
-                const word = w.segment.trim();
-                if (!word) continue;
-
-                // Count VISIBLE letters (grapheme clusters), not raw Unicode code points.
-                // Indic scripts pack multiple code points into one visible letter, so a
-                // raw .length check wildly over-flags short Indic words as "hard".
-                let graphemeLen = 0;
-                for (const g of graphemeSeg.segment(word)) graphemeLen++;
-
-                // Latin-script words tend to need more visible letters to feel genuinely
-                // hard than Indic-script words, where each grapheme already carries more.
-                const isLatin = /^[a-zA-Z]+$/.test(word);
-                const threshold = isLatin ? 7 : 5;
-
-                if (graphemeLen < threshold) continue;
-                const key = word.toLowerCase();
-                if (seen.has(key)) continue;
-                seen.add(key);
-                out.push(word);
-                if (out.length >= 10) break;
-            }
-            return out;
-        }
-
         // Urdu / Arabic-script text reads right-to-left
         function isArabicScript(text) {
             return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
@@ -1367,69 +1288,7 @@
             return div.innerHTML;
         }
 
-        function renderChips(words) {
-            chipRow.innerHTML = '';
-            meaningDetail.classList.add('hidden');
-
-            if (words.length === 0) {
-                skeleton.classList.add('hidden');
-                actualContent.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            emptyState.classList.add('hidden');
-            skeleton.classList.add('hidden');
-            actualContent.classList.remove('hidden');
-
-            words.forEach(word => {
-                const chip = document.createElement('button');
-                chip.className = 'flex items-center gap-2 bg-surface-container px-md py-sm rounded-full border border-surface-variant hover:border-primary cursor-pointer transition-colors';
-                chip.innerHTML = `<span class="font-body-md font-medium text-primary">${escapeHtml(word)}</span>`;
-                chip.addEventListener('click', () => {
-                    document.querySelectorAll('#chip-row button').forEach(c => c.classList.remove('border-primary'));
-                    chip.classList.add('border-primary');
-                    fetchMeaning(word);
-                });
-                chipRow.appendChild(chip);
-            });
-        }
-
-        async function fetchMeaning(word) {
-            meaningDetail.classList.remove('hidden');
-            meaningWord.textContent = word;
-            meaningBody.innerHTML = `
-                <div class="skeleton h-4 w-1/2 rounded"></div>
-                <div class="skeleton h-4 w-full rounded"></div>
-                <div class="skeleton h-4 w-3/4 rounded"></div>
-            `;
-
-            const langHint = currentLang === 'auto' ? 'the language it is written in (detect it)' : currentLang;
-
-            try {
-                const response = await fetch("/api/get-meaning", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ word, langHint })
-                });
-                const data = await response.json();
-                const textBlock = data.content.find(b => b.type === 'text');
-                let clean = (textBlock?.text || '{}').replace(/```json|```/g, '').trim();
-                const parsed = JSON.parse(clean);
-                const nativeDir = isArabicScript(word) ? 'dir="rtl" style="text-align:right"' : '';
-
-                meaningBody.innerHTML = `
-                    <p class="text-label-sm text-secondary"><span class="font-medium text-on-surface">Language:</span> ${escapeHtml(parsed.language) || '—'}</p>
-                    <p class="font-body-md" ${nativeDir}><span class="font-medium text-on-surface">Native meaning:</span> ${escapeHtml(parsed.meaningNative) || '—'}</p>
-                    <p class="font-body-md"><span class="font-medium text-on-surface">English meaning:</span> ${escapeHtml(parsed.meaningEnglish) || '—'}</p>
-                    <p class="font-body-md italic" ${nativeDir}><span class="font-medium text-on-surface not-italic">Example:</span> ${escapeHtml(parsed.example) || '—'}</p>
-                `;
-            } catch (err) {
-                meaningBody.innerHTML = `<p class="text-error text-label-sm">Couldn't fetch meaning right now. Please try again.</p>`;
-            }
-        }
-
         // ---- Live counting + hard word detection ----
-        let debounceTimer;
         function onEditorInput() {
             const text = editor.value;
 
@@ -1456,28 +1315,8 @@
             } else {
                 badge.classList.add('hidden');
             }
-
-            clearTimeout(debounceTimer);
-            if (text.trim().length > 10) {
-                skeleton.classList.remove('hidden');
-                actualContent.classList.add('hidden');
-                emptyState.classList.add('hidden');
-                debounceTimer = setTimeout(() => {
-                    renderChips(detectHardWords(text));
-                }, 500);
-            } else {
-                skeleton.classList.add('hidden');
-                actualContent.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            }
         }
         editor.addEventListener('input', onEditorInput);
-
-        // Collapsible Section
-        collapseBtn.addEventListener('click', () => {
-            const isHidden = collapseContent.classList.toggle('hidden');
-            collapseIcon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-        });
 
         // Language Dropdown
         langToggle.addEventListener('click', (e) => {
