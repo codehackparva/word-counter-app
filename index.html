@@ -1102,6 +1102,7 @@
                 <div class="hidden absolute right-0 mt-2 w-48 bg-surface-container-lowest border border-surface-variant rounded-lg shadow-lg overflow-hidden z-50"
                     id="lang-dropdown">
                     <div class="max-h-60 overflow-y-auto">
+                        <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">English</div>
                         <div class="px-md py-sm hover:bg-surface-container-high cursor-pointer">Gujarati</div>
                     </div>
                 </div>
@@ -1184,20 +1185,16 @@
         let currentLang = 'Gujarati';
 
         // ---- Gujarati-only counting ----
-        // Gujarati Unicode block: U+0A80–U+0AFF
         const GUJARATI_CHAR = /[\u0A80-\u0AFF]/;
-        const GUJARATI_ONLY = /^[\u0A80-\u0AFF\s।॰0-9]+$/;
 
         function isGujaratiOnly(text) {
             if (!text.trim()) return true;
-            // Allow Gujarati chars, whitespace, Gujarati punctuation, and digits
             return /^[\u0A80-\u0AFF\s।॰\d\u0964\u0965.,!?\"'()\-\*\#\_\:\;\%\@\&\+\=\/\\]+$/.test(text);
         }
 
-        function countStats(text) {
+        function countStatsGujarati(text) {
             if (!text || !text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
 
-            // Count only Gujarati grapheme clusters as letters
             let letters = 0;
             if (window.Intl && Intl.Segmenter) {
                 const graphemeSeg = new Intl.Segmenter('gu', { granularity: 'grapheme' });
@@ -1208,7 +1205,6 @@
                 letters = (text.match(/[\u0A80-\u0AFF]/gu) || []).length;
             }
 
-            // Count words using Gujarati-aware segmenter
             let words = 0;
             if (window.Intl && Intl.Segmenter) {
                 const wordSeg = new Intl.Segmenter('gu', { granularity: 'word' });
@@ -1220,14 +1216,36 @@
             }
 
             const chars = [...text].length;
-            // Gujarati sentence endings: । (U+0964) ॥ (U+0965) or standard punctuation
             const sentences = (text.match(/[^.!?।॥]+[.!?।॥]+/g) || (text.trim() ? [text] : [])).length;
 
             return { words, letters, chars, sentences };
         }
 
-        // ---- Live counting + Gujarati-only validation ----
+        // ---- English counting ----
+        function countStatsEnglish(text) {
+            if (!text || !text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
+
+            // Letters = alphabetic characters only
+            const letters = (text.match(/[a-zA-Z]/g) || []).length;
+
+            // Words = whitespace-delimited tokens
+            const words = text.trim().split(/\s+/).filter(s => s.length > 0).length;
+
+            const chars = [...text].length;
+
+            // Sentences end with . ! ?
+            const sentences = (text.match(/[^.!?]+[.!?]+/g) || (text.trim() ? [text] : [])).length;
+
+            return { words, letters, chars, sentences };
+        }
+
+        function countStats(text) {
+            return currentLang === 'English' ? countStatsEnglish(text) : countStatsGujarati(text);
+        }
+
+        // ---- Live counting + language validation ----
         const langWarning = document.getElementById('lang-warning');
+        const langWarningMsg = langWarning.querySelector('p');
 
         function onEditorInput() {
             const text = editor.value;
@@ -1238,8 +1256,8 @@
             editor.setAttribute('dir', 'ltr');
             editor.style.textAlign = 'left';
 
-            // If text contains any non-Gujarati script characters, show warning and zero stats
-            if (text.trim() && !isGujaratiOnly(text)) {
+            // Gujarati mode: reject non-Gujarati input
+            if (currentLang === 'Gujarati' && text.trim() && !isGujaratiOnly(text)) {
                 langWarning.classList.remove('hidden');
                 wordCount.textContent = '0';
                 letterCount.textContent = '0';
@@ -1260,6 +1278,18 @@
         }
         editor.addEventListener('input', onEditorInput);
 
+        // ---- Apply language settings to the UI ----
+        function applyLanguage(lang) {
+            currentLang = lang;
+            if (lang === 'English') {
+                editor.placeholder = 'Start typing or paste your English text here...';
+                langWarning.classList.add('hidden');
+            } else {
+                editor.placeholder = 'અહીં ગુજરાતી લખો અથવા પેસ્ટ કરો...';
+            }
+            editor.value = '';
+            onEditorInput();
+        }
 
         // Language Dropdown
         langToggle.addEventListener('click', (e) => {
@@ -1271,10 +1301,11 @@
         const dropdownItems = langDropdown.querySelectorAll('div > div');
         dropdownItems.forEach(item => {
             item.addEventListener('click', () => {
-                langToggle.querySelector('span:nth-child(2)').textContent = item.textContent;
-                currentLang = item.textContent;
+                const selected = item.textContent.trim();
+                langToggle.querySelector('span:nth-child(2)').textContent = selected;
                 langDropdown.classList.add('hidden');
                 badge.classList.add('hidden');
+                applyLanguage(selected);
             });
         });
 
