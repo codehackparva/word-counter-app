@@ -1130,6 +1130,21 @@
                 <span class="material-symbols-outlined text-[18px] text-error">warning</span>
                 <p class="text-label-sm text-error font-medium">માત્ર ગુજરાતી ભાષા સ્વીકાર્ય છે. કૃપા કરી ફક્ત ગુજરાતી લખો.</p>
             </div>
+            <!-- Half-letter toggle (Gujarati only) -->
+            <div id="half-letter-bar" class="hidden mx-lg mb-md flex items-center justify-between gap-3 bg-surface-container px-4 py-2 rounded-lg border border-surface-variant">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px] text-secondary">text_fields</span>
+                    <span class="text-label-sm font-label-sm text-on-surface-variant">Count half letters as full</span>
+                    <span class="text-label-sm text-outline" title="e.g. સ્વ counts as 2 letters (સ + વ) instead of 1">
+                        <span class="material-symbols-outlined text-[15px] align-middle cursor-help">info</span>
+                    </span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer" id="half-letter-label">
+                    <input type="checkbox" id="half-letter-toggle" class="sr-only peer">
+                    <div class="w-10 h-5 bg-surface-variant rounded-full peer peer-checked:bg-primary transition-colors duration-200"></div>
+                    <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-5"></div>
+                </label>
+            </div>
         </section>
         <!-- Stat Pills Grid -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-md">
@@ -1183,11 +1198,18 @@
         const langDropdown = document.getElementById('lang-dropdown');
         const langLabel = langToggle.querySelector('span:nth-child(2)');
         const langWarning = document.getElementById('lang-warning');
+        const halfLetterBar = document.getElementById('half-letter-bar');
+        const halfLetterToggle = document.getElementById('half-letter-toggle');
 
         let currentLang = 'English';
+        let countHalfAsFull = false;
 
         // ── Gujarati helpers ─────────────────────────────────────────────────
         const GU = /[\u0A80-\u0AFF]/;
+
+        // Gujarati base characters: independent vowels + consonants (excludes matras, virama, nukta)
+        // U+0A85-U+0A8D, U+0A8F-U+0A91, U+0A93-U+0AB9, U+0ABD, U+0AE0, U+0AE1
+        const GU_BASE = /[\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AB9\u0ABD\u0AE0\u0AE1]/gu;
 
         function isGujaratiOnly(text) {
             if (!text.trim()) return true;
@@ -1198,15 +1220,20 @@
         function countGujarati(text) {
             if (!text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
 
-            // Letters = Gujarati grapheme clusters
+            // Letters: either grapheme clusters OR individual base chars (half-as-full mode)
             let letters = 0;
-            try {
-                const seg = new Intl.Segmenter('gu', { granularity: 'grapheme' });
-                for (const { segment } of seg.segment(text)) {
-                    if (GU.test(segment)) letters++;
+            if (countHalfAsFull) {
+                // Count every base consonant/vowel individually, ignoring virama joining
+                letters = (text.match(GU_BASE) || []).length;
+            } else {
+                try {
+                    const seg = new Intl.Segmenter('gu', { granularity: 'grapheme' });
+                    for (const { segment } of seg.segment(text)) {
+                        if (GU.test(segment)) letters++;
+                    }
+                } catch {
+                    letters = (text.match(/[\u0A80-\u0AFF]/gu) || []).length;
                 }
-            } catch {
-                letters = (text.match(/[\u0A80-\u0AFF]/gu) || []).length;
             }
 
             // Words = Gujarati word tokens
@@ -1278,9 +1305,15 @@
 
             if (lang === 'English') {
                 editor.placeholder = 'Start typing or paste your English text here...';
+                halfLetterBar.classList.add('hidden');
             } else {
                 editor.placeholder = 'અહીં ગુજરાતી લખો અથવા પેસ્ટ કરો...';
+                halfLetterBar.classList.remove('hidden');
             }
+
+            // Reset toggle on language switch
+            countHalfAsFull = false;
+            halfLetterToggle.checked = false;
 
             editor.value = '';
             langWarning.classList.add('hidden');
@@ -1310,6 +1343,12 @@
             langWarning.classList.add('hidden');
             updateDisplay({ words: 0, letters: 0, chars: 0, sentences: 0 });
             editor.focus();
+        });
+
+        // Half-letter toggle
+        halfLetterToggle.addEventListener('change', () => {
+            countHalfAsFull = halfLetterToggle.checked;
+            onEditorInput();
         });
 
 
