@@ -1298,7 +1298,7 @@
         });
         document.addEventListener('click', () => langDropdown.classList.add('hidden'));
 
-        const dropdownItems = langDropdown.querySelectorAll('div > div');
+        const dropdownItems = langDropdown.querySelectorAll('div > div > div');
         dropdownItems.forEach(item => {
             item.addEventListener('click', () => {
                 const selected = item.textContent.trim();
