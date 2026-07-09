@@ -1096,7 +1096,7 @@
                     class="flex items-center gap-2 px-md py-sm bg-surface-container rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors"
                     id="lang-toggle">
                     <span class="material-symbols-outlined">language</span>
-                    <span class="">Gujarati</span>
+                    <span class="">English</span>
                     <span class="material-symbols-outlined">expand_more</span>
                 </button>
                 <div class="hidden absolute right-0 mt-2 w-48 bg-surface-container-lowest border border-surface-variant rounded-lg shadow-lg overflow-hidden z-50"
@@ -1123,7 +1123,7 @@
             </div>
             <textarea
                 class="w-full min-h-[300px] p-lg border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline-variant bg-transparent textarea-focus-glow transition-all duration-200"
-                id="main-editor" placeholder="અહીં ગુજરાતી લખો અથવા પેસ્ટ કરો..." spellcheck="false"
+                id="main-editor" placeholder="Start typing or paste your English text here..." spellcheck="false"
                 aria-label="Text input for word and letter counting"></textarea>
             <div id="lang-warning" class="hidden mx-lg mb-md mt-1 flex items-center gap-2 bg-error-container/30 px-3 py-2 rounded-lg border border-error/20">
                 <span class="material-symbols-outlined text-[18px] text-error">warning</span>
@@ -1182,7 +1182,7 @@
         const langDropdown = document.getElementById('lang-dropdown');
 
 
-        let currentLang = 'Gujarati';
+        let currentLang = 'English';
 
         // ---- Gujarati-only counting ----
         const GUJARATI_CHAR = /[\u0A80-\u0AFF]/;
@@ -1300,7 +1300,8 @@
 
         const dropdownItems = langDropdown.querySelectorAll('div > div > div');
         dropdownItems.forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const selected = item.textContent.trim();
                 langToggle.querySelector('span:nth-child(2)').textContent = selected;
                 langDropdown.classList.add('hidden');
