@@ -8,8 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Gujarati:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&family=Noto+Sans+Gurmukhi:wght@400;500;600&family=Noto+Sans+Oriya:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 </head>
 
 <body class="bg-background font-body-md text-on-surface flex flex-col min-h-screen">
@@ -38,12 +37,6 @@
 
         <!-- Editor Card -->
         <section class="bg-surface-container-lowest border border-surface-variant rounded-lg shadow-sm overflow-hidden relative">
-            <div class="p-xs absolute top-4 right-4 pointer-events-none">
-                <span class="hidden bg-primary-fixed text-primary px-3 py-1 rounded-full text-label-sm font-label-sm flex items-center gap-1 animate-pulse" id="detect-badge">
-                    <span class="material-symbols-outlined text-[14px]">bolt</span>
-                    Auto-detect active
-                </span>
-            </div>
             <textarea class="w-full min-h-[300px] p-lg border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline-variant bg-transparent textarea-focus-glow transition-all duration-200" id="main-editor" placeholder="Start typing or paste your English text here..." spellcheck="false" aria-label="Text input for word and letter counting"></textarea>
 
             <div id="lang-warning" class="hidden mx-lg mb-md mt-1 flex items-center gap-2 bg-error-container/30 px-3 py-2 rounded-lg border border-error/20">
