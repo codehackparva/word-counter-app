@@ -13,6 +13,7 @@
 </head>
 
 <body class="bg-background font-body-md text-on-surface flex flex-col min-h-screen">
+
     <!-- TopNavBar -->
     <nav class="bg-background border-b border-surface-variant sticky top-0 z-50">
         <div class="flex justify-between items-center max-w-[900px] mx-auto px-lg py-md w-full">
@@ -32,7 +33,9 @@
             </div>
         </div>
     </nav>
+
     <main class="flex-grow w-full max-w-[900px] mx-auto px-lg py-xl space-y-lg">
+
         <!-- Editor Card -->
         <section class="bg-surface-container-lowest border border-surface-variant rounded-lg shadow-sm overflow-hidden relative">
             <div class="p-xs absolute top-4 right-4 pointer-events-none">
@@ -42,10 +45,12 @@
                 </span>
             </div>
             <textarea class="w-full min-h-[300px] p-lg border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline-variant bg-transparent textarea-focus-glow transition-all duration-200" id="main-editor" placeholder="Start typing or paste your English text here..." spellcheck="false" aria-label="Text input for word and letter counting"></textarea>
+
             <div id="lang-warning" class="hidden mx-lg mb-md mt-1 flex items-center gap-2 bg-error-container/30 px-3 py-2 rounded-lg border border-error/20">
                 <span class="material-symbols-outlined text-[18px] text-error">warning</span>
                 <p class="text-label-sm text-error font-medium">માત્ર ગુજરાતી ભાષા સ્વીકાર્ય છે. કૃપા કરી ફક્ત ગુજરાતી લખો.</p>
             </div>
+
             <!-- Half-letter toggle (Gujarati only) -->
             <div id="half-letter-bar" class="hidden mx-lg mb-md flex items-center justify-between gap-3 bg-surface-container px-4 py-2 rounded-lg border border-surface-variant">
                 <div class="flex items-center gap-2">
@@ -62,6 +67,7 @@
                 </label>
             </div>
         </section>
+
         <!-- Stat Pills Grid -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-md">
             <div class="bg-surface-container border border-surface-variant p-md rounded-lg flex flex-col items-center justify-center space-y-1 hover:border-primary/30 transition-all cursor-default">
@@ -81,7 +87,9 @@
                 <span class="font-stat-value text-stat-value text-on-surface" id="sentence-count">0</span>
             </div>
         </section>
+
     </main>
+
     <!-- Bottom Footer Toolbar -->
     <footer class="bg-surface-container-lowest border-t border-surface-variant mt-auto py-md">
         <div class="flex flex-col md:flex-row justify-between items-center max-w-[900px] mx-auto px-lg w-full gap-md">
@@ -95,7 +103,7 @@
             </div>
         </div>
     </footer>
+
     <script src="app.js"></script>
 </body>
-
 </html>
