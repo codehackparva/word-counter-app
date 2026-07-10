@@ -70,7 +70,7 @@
     function countEnglish(text) {
         if (!text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
 
-        var words     = text.trim().split(/\s+/).filter(function (s) { return s.length > 0; }).length;
+        var words     = (text.match(/[a-zA-Z0-9]+(?:'[a-zA-Z]+)*/g) || []).length;
         var letters   = (text.match(/[a-zA-Z]/g) || []).length;
         var chars     = text.length;
         var sentences = (text.match(/[^.!?]+[.!?]+/g) || (text.trim() ? [text] : [])).length;
