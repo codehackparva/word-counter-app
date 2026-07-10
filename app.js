@@ -1,9 +1,167 @@
-// Protected Source - Word Counter App
-(function(_0x4a1b,_0x3c2d){const _0x1e5f=function(_0x2a3b){while(--_0x2a3b){_0x4a1b['push'](_0x4a1b['shift']());}};_0x1e5f(++_0x3c2d);}([](),0x0));
-!function(){var _=document,q=_.getElementById.bind(_),W=q('main-editor'),wc=q('word-count'),lc=q('letter-count'),cc=q('char-count'),sc=q('sentence-count'),badge=q('detect-badge'),lt=q('lang-toggle'),ld=q('lang-dropdown'),ll=lt.querySelector('span:nth-child(2)'),lw=q('lang-warning'),hlb=q('half-letter-bar'),hlt=q('half-letter-toggle'),cL='English',cH=!1,GU=/[\u0A80-\u0AFF]/,GB=/[\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AB9\u0ABD\u0AE0\u0AE1]/gu;function gO(t){return!t.trim()||/^[\u0A80-\u0AFF\s\d\u0964\u0965.,!?"'()\-*#_:;%@&+=\/\\]+$/.test(t);}function cG(t){if(!t.trim())return{words:0,letters:0,chars:0,sentences:0};var l=0;if(cH){l=(t.match(GB)||[]).length;}else{try{var sg=new Intl.Segmenter('gu',{granularity:'grapheme'});for(var s of sg.segment(t)){if(GU.test(s.segment))l++;}}catch(e){l=(t.match(/[\u0A80-\u0AFF]/gu)||[]).length;}}var w=0;try{var sw=new Intl.Segmenter('gu',{granularity:'word'});for(var ww of sw.segment(t)){if(ww.isWordLike&&GU.test(ww.segment))w++;}}catch(e){w=t.trim().split(/\s+/).filter(function(s){return GU.test(s);}).length;}var ch=[...t].length,se=(t.match(/[^.!?\u0964\u0965]+[.!?\u0964\u0965]+/g)||(t.trim()?[t]:[])).length;return{words:w,letters:l,chars:ch,sentences:se};}function cE(t){if(!t.trim())return{words:0,letters:0,chars:0,sentences:0};var w=t.trim().split(/\s+/).filter(function(s){return s.length>0;}).length,l=(t.match(/[a-zA-Z]/g)||[]).length,ch=t.length,se=(t.match(/[^.!?]+[.!?]+/g)||(t.trim()?[t]:[])).length;return{words:w,letters:l,chars:ch,sentences:se};}function uD(s){wc.textContent=s.words;lc.textContent=s.letters;cc.textContent=s.chars;sc.textContent=s.sentences;}function oI(){var t=W.value;W.style.height='auto';W.style.height=W.scrollHeight+'px';if(cL==='Gujarati'){if(t.trim()&&!gO(t)){lw.classList.remove('hidden');uD({words:0,letters:0,chars:0,sentences:0});return;}lw.classList.add('hidden');uD(cG(t));}else{lw.classList.add('hidden');uD(cE(t));}}W.addEventListener('input',oI);function aL(lang){cL=lang;ll.textContent=lang;ld.classList.add('hidden');if(lang==='English'){W.placeholder='Start typing or paste your English text here...';hlb.classList.add('hidden');}else{W.placeholder='\u0A85\u0AB9\u0AC0\u0A82 \u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0 \u0AB2\u0A96\u0ACB \u0A85\u0AA5\u0AB5\u0ABE \u0AAA\u0AC7\u0AB8\u0ACD\u0A9F \u0A95\u0AB0\u0ACB...';hlb.classList.remove('hidden');}cH=!1;hlt.checked=!1;W.value='';lw.classList.add('hidden');uD({words:0,letters:0,chars:0,sentences:0});W.focus();}lt.addEventListener('click',function(e){e.stopPropagation();ld.classList.toggle('hidden');});document.addEventListener('click',function(){ld.classList.add('hidden');});ld.querySelectorAll('[data-lang]').forEach(function(item){item.addEventListener('click',function(e){e.stopPropagation();aL(item.dataset.lang);});});q('clear-btn').addEventListener('click',function(){W.value='';lw.classList.add('hidden');uD({words:0,letters:0,chars:0,sentences:0});W.focus();});hlt.addEventListener('change',function(){cH=hlt.checked;oI();});
+(function () {
+    'use strict';
 
-// ── Source Protection ────────────────────────────────────────────────────────
-document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
-document.addEventListener('keydown',function(e){var k=e.key||e.keyCode;if(e.ctrlKey&&(k==='u'||k===85||k==='U')){e.preventDefault();return false;}if(e.ctrlKey&&e.shiftKey&&(k==='i'||k==='I'||k===73)){e.preventDefault();return false;}if(e.ctrlKey&&e.shiftKey&&(k==='j'||k==='J'||k===74)){e.preventDefault();return false;}if(e.ctrlKey&&e.shiftKey&&(k==='c'||k==='C'||k===67)){e.preventDefault();return false;}if(k===123||k==='F12'){e.preventDefault();return false;}if(e.ctrlKey&&(k==='s'||k==='S'||k===83)){e.preventDefault();return false;}},true);
+    // ── DOM References ──────────────────────────────────────────────────────────
+    var editor          = document.getElementById('main-editor');
+    var wordCount       = document.getElementById('word-count');
+    var letterCount     = document.getElementById('letter-count');
+    var charCount       = document.getElementById('char-count');
+    var sentenceCount   = document.getElementById('sentence-count');
+    var langToggle      = document.getElementById('lang-toggle');
+    var langDropdown    = document.getElementById('lang-dropdown');
+    var langLabel       = langToggle.querySelector('span:nth-child(2)');
+    var langWarning     = document.getElementById('lang-warning');
+    var halfLetterBar   = document.getElementById('half-letter-bar');
+    var halfLetterToggle = document.getElementById('half-letter-toggle');
+    var clearBtn        = document.getElementById('clear-btn');
 
-oI();}();
+    // ── State ───────────────────────────────────────────────────────────────────
+    var currentLang      = 'English';
+    var countHalfLetters = false;
+
+    // ── Regex ────────────────────────────────────────────────────────────────────
+    var gujaratiRange       = /[\u0A80-\u0AFF]/;
+    var gujaratiBaseLetters = /[\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AB9\u0ABD\u0AE0\u0AE1]/gu;
+
+    // ── Validate Gujarati-only text ──────────────────────────────────────────────
+    function isGujaratiOnly(text) {
+        return !text.trim() ||
+            /^[\u0A80-\u0AFF\s\d\u0964\u0965.,!?"'()\-*#_:;%@&+=\/\\]+$/.test(text);
+    }
+
+    // ── Count stats for Gujarati ─────────────────────────────────────────────────
+    function countGujarati(text) {
+        if (!text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
+
+        var letters = 0;
+        if (countHalfLetters) {
+            letters = (text.match(gujaratiBaseLetters) || []).length;
+        } else {
+            try {
+                var seg = new Intl.Segmenter('gu', { granularity: 'grapheme' });
+                for (var s of seg.segment(text)) {
+                    if (gujaratiRange.test(s.segment)) letters++;
+                }
+            } catch (e) {
+                letters = (text.match(/[\u0A80-\u0AFF]/gu) || []).length;
+            }
+        }
+
+        var words = 0;
+        try {
+            var wseg = new Intl.Segmenter('gu', { granularity: 'word' });
+            for (var w of wseg.segment(text)) {
+                if (w.isWordLike && gujaratiRange.test(w.segment)) words++;
+            }
+        } catch (e) {
+            words = text.trim().split(/\s+/).filter(function (s) {
+                return gujaratiRange.test(s);
+            }).length;
+        }
+
+        var chars     = [...text].length;
+        var sentences = (text.match(/[^.!?\u0964\u0965]+[.!?\u0964\u0965]+/g) ||
+                        (text.trim() ? [text] : [])).length;
+
+        return { words: words, letters: letters, chars: chars, sentences: sentences };
+    }
+
+    // ── Count stats for English ──────────────────────────────────────────────────
+    function countEnglish(text) {
+        if (!text.trim()) return { words: 0, letters: 0, chars: 0, sentences: 0 };
+
+        var words     = text.trim().split(/\s+/).filter(function (s) { return s.length > 0; }).length;
+        var letters   = (text.match(/[a-zA-Z]/g) || []).length;
+        var chars     = text.length;
+        var sentences = (text.match(/[^.!?]+[.!?]+/g) || (text.trim() ? [text] : [])).length;
+
+        return { words: words, letters: letters, chars: chars, sentences: sentences };
+    }
+
+    // ── Update counter display ───────────────────────────────────────────────────
+    function updateDisplay(stats) {
+        wordCount.textContent     = stats.words;
+        letterCount.textContent   = stats.letters;
+        charCount.textContent     = stats.chars;
+        sentenceCount.textContent = stats.sentences;
+    }
+
+    // ── Main input handler ───────────────────────────────────────────────────────
+    function onInput() {
+        var text = editor.value;
+
+        // Auto-resize textarea height
+        editor.style.height = 'auto';
+        editor.style.height = editor.scrollHeight + 'px';
+
+        if (currentLang === 'Gujarati') {
+            if (text.trim() && !isGujaratiOnly(text)) {
+                langWarning.classList.remove('hidden');
+                updateDisplay({ words: 0, letters: 0, chars: 0, sentences: 0 });
+                return;
+            }
+            langWarning.classList.add('hidden');
+            updateDisplay(countGujarati(text));
+        } else {
+            langWarning.classList.add('hidden');
+            updateDisplay(countEnglish(text));
+        }
+    }
+
+    // ── Language switcher ────────────────────────────────────────────────────────
+    function setLanguage(lang) {
+        currentLang = lang;
+        langLabel.textContent = lang;
+        langDropdown.classList.add('hidden');
+
+        if (lang === 'English') {
+            editor.placeholder = 'Start typing or paste your English text here...';
+            halfLetterBar.classList.add('hidden');
+        } else {
+            editor.placeholder = '\u0A85\u0AB9\u0AC0\u0A82 \u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0 \u0AB2\u0A96\u0ACB \u0A85\u0AA5\u0AB5\u0ABE \u0AAA\u0AC7\u0AB8\u0ACD\u0A9F \u0A95\u0AB0\u0ACB...';
+            halfLetterBar.classList.remove('hidden');
+        }
+
+        countHalfLetters = false;
+        halfLetterToggle.checked = false;
+        editor.value = '';
+        langWarning.classList.add('hidden');
+        updateDisplay({ words: 0, letters: 0, chars: 0, sentences: 0 });
+        editor.focus();
+    }
+
+    // ── Event Listeners ──────────────────────────────────────────────────────────
+    editor.addEventListener('input', onInput);
+
+    langToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        langDropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function () {
+        langDropdown.classList.add('hidden');
+    });
+
+    langDropdown.querySelectorAll('[data-lang]').forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            e.stopPropagation();
+            setLanguage(item.dataset.lang);
+        });
+    });
+
+    clearBtn.addEventListener('click', function () {
+        editor.value = '';
+        langWarning.classList.add('hidden');
+        updateDisplay({ words: 0, letters: 0, chars: 0, sentences: 0 });
+        editor.focus();
+    });
+
+    halfLetterToggle.addEventListener('change', function () {
+        countHalfLetters = halfLetterToggle.checked;
+        onInput();
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────────────
+    onInput();
+
+}());
